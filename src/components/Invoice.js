@@ -1,9 +1,42 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { useFormik } from 'formik'
+import * as Yup from 'yup';
 import { Card, Row, Col, Button, FormGroup, Form, Table, ListGroup } from 'react-bootstrap'
 import { BsX } from 'react-icons/bs'
 
 export default function Invoice() {
 
+    const [invoiceData, setInvoiceData] = useState({
+        name: "",
+        item: [],
+        subtotal: "",
+        text: "",
+        total: ""
+    });
+
+
+    const itemForm = useFormik({
+        initialValues: { name: "", qty: "", price: "", total: "" },
+        validationSchema: Yup.object().shape({
+            name: Yup.string()
+                .min(5, 'name is too short!')
+                .max(50, 'name is too long!')
+                .required('name is required'),
+            qty: Yup.number()
+                .min(1)
+                .max(50)
+                .required('qty is requiered'),
+            price: Yup.number().min(10).max(9999).required('price is required'),
+            total: Yup.number().required("total is required")
+        }),
+        onSubmit: handleFormSubmit
+    });
+
+
+    function handleFormSubmit(values) {
+        alert(JSON.stringify(values, null, 2))
+        itemForm.resetForm();
+    }
 
 
     function invoiceName() {
@@ -22,15 +55,11 @@ export default function Invoice() {
     }
 
 
+
+
     function itemTable() {
 
-        const FormControl = ({ type }) => (
-            <Form>
-                <Col sm="auto">
-                    <Form.Control type={type} />
-                </Col>
-            </Form>
-        )
+        const { values, errors, touched, handleChange, setFieldValue } = itemForm;
 
         return (
             <>
@@ -43,16 +72,52 @@ export default function Invoice() {
                                     <th>number of item</th>
                                     <th>price</th>
                                     <th>total</th>
-                                    <th>action</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><FormControl type="text" /></td>
-                                    <td><FormControl type="text" /></td>
-                                    <td><FormControl type="number" /></td>
-                                    <td>0</td>
-                                    <td><BsX className='' /></td>
+                                    <td>
+                                        <InputForm
+                                            type="text"
+                                            name="name"
+                                            value={values.name}
+                                            onChange={handleChange}
+                                            errors={errors.name}
+                                            isInvalid={errors.name && touched.name}
+                                            placeholder="enter item name"
+                                        />
+                                    </td>
+                                    <td>
+                                        <InputForm
+                                            type="number"
+                                            name="qty"
+                                            value={values.qty}
+                                            onChange={({ currentTarget: { value } }) => {
+                                                setFieldValue("qty", value);
+                                                setFieldValue("total", values.price * value);
+                                            }}
+                                            errors={errors.qty}
+                                            isInvalid={errors.qty && touched.qty}
+                                            placeholder="enter quantity"
+                                        />
+                                    </td>
+                                    <td>
+                                        <InputForm
+                                            type="number"
+                                            name="price"
+                                            value={values.price}
+                                            onChange={({ currentTarget: { value } }) => {
+                                                setFieldValue("price", value)
+                                                setFieldValue("total", values.qty * value)
+                                            }}
+                                            errors={errors.price}
+                                            isInvalid={errors.price && touched.price}
+                                            placeholder="enter price"
+                                        />
+                                    </td>
+                                    <td>{values.total}</td>
+                                    <td className='text-align-center'><BsX className='' /></td>
                                 </tr>
                             </tbody>
                         </Table>
@@ -67,9 +132,9 @@ export default function Invoice() {
 
     function invoiceFooter() {
         return (
-            <Row>
+            <Row className='border-top border-secondary pt-4'>
                 <Col>
-                    <Button className='primary mb-4'>Add item</Button>
+                    <Button onClick={itemForm.handleSubmit} className='primary mb-4'>Add item</Button>
                 </Col>
                 <Col>
                     <ListGroup as="ol">
@@ -89,7 +154,7 @@ export default function Invoice() {
                             className="d-flex justify-content-between align-items-start  py-3 border-0"
                         >
                             <div className="ms-2 me-auto">
-                                <div className="fw-bold">Text</div>
+                                <div className="fw-bold">Tax</div>
                             </div>
                             <div>
                                 <span>000</span>
@@ -135,5 +200,27 @@ export default function Invoice() {
     )
 }
 
+
+
+function InputForm({ type, name, value, onChange, errors, isInvalid, placeholder }) {
+    return (
+        <Form noValidate>
+            <Form.Group>
+                <Form.Control
+                    type={type}
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    isInvalid={isInvalid}
+                    controlid="validationCustom05"
+                    placeholder={placeholder}
+                />
+                <Form.Control.Feedback type="invalid" className='absolutee' >
+                    {errors}
+                </Form.Control.Feedback>
+            </Form.Group>
+        </Form>
+    )
+}
 
 
