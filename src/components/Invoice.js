@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup';
+import { v4 as uuidv4 } from 'uuid'
 import { Card, Row, Col, Button, Form, Table, ListGroup, Modal } from 'react-bootstrap'
 import { BsX, BsExclamationCircle } from 'react-icons/bs'
 
@@ -86,7 +87,8 @@ export default function Invoice() {
             return;
         }
 
-        console.log(values)
+        alert(JSON.stringify(values), null, 2);
+
         invoiceForm.resetForm();
     }
 
@@ -102,12 +104,13 @@ export default function Invoice() {
         alert(JSON.stringify(values, null, 2));
         const { item, tax } = invoiceForm.values
         let prevSubTotal = item.reduce((accumulator, currentValue) => accumulator + currentValue.total, 0);
-        invoiceForm.setFieldValue("item", [...item, values])
+        invoiceForm.setFieldValue("item", [...item, { ...values, id: uuidv4() }]);
         itemForm.resetForm();
         let newSubTotal = prevSubTotal + values.total;
         invoiceForm.setFieldValue("subtotal", newSubTotal);
         invoiceForm.setFieldValue("total", newSubTotal + tax);
     }
+
 
 
     function itemTable() {
@@ -124,6 +127,15 @@ export default function Invoice() {
             }
         }
 
+        const handleItemDelete = (itm) => {
+
+            const { values: { item }, setFieldValue } = invoiceForm;
+
+            const filterResult = item.filter(i => i.id !== itm.id && i.name !== itm.name);
+
+            setFieldValue("item", filterResult);
+        }
+
         return (
             <>
                 <Row className='my-4'>
@@ -135,7 +147,7 @@ export default function Invoice() {
                                     <th className='text-capitalize text-center'>number of item</th>
                                     <th className='text-capitalize text-center pe-4'>price</th>
                                     <th className='text-capitalize text-center pe-4'>total</th>
-                                    <th className='text-capitalize text-center'>Action</th>
+                                    <th className='text-capitalize text-center'></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -150,12 +162,12 @@ export default function Invoice() {
                                                 </div>
                                             </td>
                                             <td className='text-end pe-4'>
-                                                <div className='d-flex justify-content-center align-item-center text-end'>
+                                                <div className='d-flex justify-content-center  text-end'>
                                                     {itm.total}
                                                 </div>
                                             </td>
                                             <td className='text-center px-5'>
-                                                <BsX className='fs-2 cursor-pointer' />
+                                                <BsX onClick={() => handleItemDelete(itm)} role={"button"} className='fs-2 cursor-pointer' />
                                             </td>
                                         </tr>
 
@@ -220,7 +232,7 @@ export default function Invoice() {
                     <Button onClick={itemForm.handleSubmit} className='primary mb-4'>Add item</Button>
                 </Col>
                 <Col>
-                    <ListGroup as="ol"  className='me-5'>
+                    <ListGroup as="ol" className='me-5'>
                         <ListGroup.Item
                             as="li"
                             className="d-flex justify-content-between align-items-start py-3 border-0"
@@ -248,7 +260,7 @@ export default function Invoice() {
                             className="d-flex justify-content-between align-items-start py-3 border-0"
                         >
                             <div className="ms-2 me-auto">
-                                <div className="fw-bold">Total</div>
+                                <div className="fw-bold">Total Amount</div>
                             </div>
                             <div>
                                 <span>{invoiceForm.values.total}</span>
