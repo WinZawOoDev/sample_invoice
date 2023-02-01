@@ -1,65 +1,128 @@
 import React, { useState } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup';
-import { Card, Row, Col, Button, FormGroup, Form, Table, ListGroup } from 'react-bootstrap'
-import { BsX } from 'react-icons/bs'
+import { Card, Row, Col, Button, Form, Table, ListGroup, Modal } from 'react-bootstrap'
+import { BsX, BsExclamationCircle } from 'react-icons/bs'
+
+
+const itemValidationSchema = Yup.object().shape({
+    name: Yup.string()
+        .min(5, 'itemName is too short!')
+        .max(50, 'itemName is too long!')
+        .required('itemName is required'),
+    qty: Yup.number()
+        .min(1)
+        .max(50)
+        .required('qty is requiered'),
+    price: Yup.number().min(10).max(9999).required('price is required'),
+    total: Yup.number().required("total is required")
+});
+
+
+const invoiceValidationSchema = Yup.object().shape({
+    name: Yup.string()
+        .min(5, 'invoiceName is too short!')
+        .max(60, 'invoiceName is too long!')
+        .required('invoiceName is required'),
+    // item: Yup.array(itemValidationSchema)
+    //     .min(1, "item must have at least 1 items")
+    //     .max(20)
+    //     .required('item is requiered'),
+    // subtotal: Yup.number().required(),
+    // tax: Yup.number().required(),
+    // total: Yup.number().required(),
+});
 
 export default function Invoice() {
 
-    const [invoiceData, setInvoiceData] = useState({
-        name: "",
-        item: [],
-        subtotal: "",
-        text: "",
-        total: ""
+    const [showErrModal, setShowErrModal] = useState(false);
+
+    const invoiceForm = useFormik({
+        initialValues: {
+            name: "",
+            item: [],
+            subtotal: "",
+            tax: 25.00,
+            total: ""
+        },
+        validationSchema: invoiceValidationSchema,
+        onSubmit: handleInvoiceFormSubmit
     });
+
+
+    function invoiceFormInput() {
+        const { values, touched, errors, handleChange, handleBlur } = invoiceForm;
+        return (
+            <>
+                <Row>
+                    <Col sm="7">
+                        <InputForm
+                            label='Invoice Name'
+                            type="text"
+                            name="name"
+                            value={values.name}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            errors={errors.name}
+                            isInvalid={touched.name && errors.name}
+                            placeholder="enter invoice name"
+                        />
+                    </Col>
+                </Row>
+                <ErrorModal show={showErrModal} onHide={() => setShowErrModal(false)}>
+                    <span className='text-danger'>
+                        item must have at least 1 items
+                    </span>
+                </ErrorModal>
+            </>
+
+        );
+    }
+
+
+    function handleInvoiceFormSubmit(values) {
+        if (Array.isArray(values.item) && !values.item.length) {
+            setShowErrModal(true);
+            return;
+        }
+
+        console.log(values)
+        invoiceForm.resetForm();
+    }
 
 
     const itemForm = useFormik({
         initialValues: { name: "", qty: "", price: "", total: "" },
-        validationSchema: Yup.object().shape({
-            name: Yup.string()
-                .min(5, 'name is too short!')
-                .max(50, 'name is too long!')
-                .required('name is required'),
-            qty: Yup.number()
-                .min(1)
-                .max(50)
-                .required('qty is requiered'),
-            price: Yup.number().min(10).max(9999).required('price is required'),
-            total: Yup.number().required("total is required")
-        }),
-        onSubmit: handleFormSubmit
+        validationSchema: itemValidationSchema,
+        onSubmit: handleItemFormSubmit
     });
 
 
-    function handleFormSubmit(values) {
-        alert(JSON.stringify(values, null, 2))
+    function handleItemFormSubmit(values) {
+        alert(JSON.stringify(values, null, 2));
+        const { item, tax } = invoiceForm.values
+        let prevSubTotal = item.reduce((accumulator, currentValue) => accumulator + currentValue.total, 0);
+        invoiceForm.setFieldValue("item", [...item, values])
         itemForm.resetForm();
+        let newSubTotal = prevSubTotal + values.total;
+        invoiceForm.setFieldValue("subtotal", newSubTotal);
+        invoiceForm.setFieldValue("total", newSubTotal + tax);
     }
-
-
-    function invoiceName() {
-        return (
-            <Form>
-                <FormGroup as={Row}>
-                    <Form.Label>
-                        Invoice Name
-                    </Form.Label>
-                    <Col sm="7">
-                        <Form.Control type='text' placeholder='Add new invoice name' />
-                    </Col>
-                </FormGroup>
-            </Form>
-        )
-    }
-
-
 
 
     function itemTable() {
 
-        const { values, errors, touched, handleChange, setFieldValue } = itemForm;
+        const { values, errors, touched, handleChange, handleBlur, setFieldValue } = itemForm;
+
+        const handleCustomChange = ({ currentTarget: { name, value } }) => {
+            if (name === "qty") {
+                setFieldValue(name, value);
+                setFieldValue("total", values.price * value);
+            } else {
+                setFieldValue(name, value);
+                setFieldValue("total", values.qty * value);
+            }
+        }
 
         return (
             <>
@@ -68,14 +131,35 @@ export default function Invoice() {
                         <Table hover>
                             <thead>
                                 <tr>
-                                    <th>item name</th>
-                                    <th>number of item</th>
-                                    <th>price</th>
-                                    <th>total</th>
-                                    <th>Action</th>
+                                    <th className='text-capitalize'>item name</th>
+                                    <th className='text-capitalize text-center'>number of item</th>
+                                    <th className='text-capitalize text-center pe-4'>price</th>
+                                    <th className='text-capitalize text-center pe-4'>total</th>
+                                    <th className='text-capitalize text-center'>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                {(Array.isArray(invoiceForm.values.item) && invoiceForm.values.item.length) ?
+                                    invoiceForm.values.item.map((itm, index) => (
+                                        <tr key={index}>
+                                            <td>{itm.name}</td>
+                                            <td className='text-center'>{itm.qty}</td>
+                                            <td className=''>
+                                                <div className='d-flex justify-content-center align-item-center text-end'>
+                                                    {itm.price}
+                                                </div>
+                                            </td>
+                                            <td className='text-end pe-4'>
+                                                <div className='d-flex justify-content-center align-item-center text-end'>
+                                                    {itm.total}
+                                                </div>
+                                            </td>
+                                            <td className='text-center px-5'>
+                                                <BsX className='fs-2 cursor-pointer' />
+                                            </td>
+                                        </tr>
+
+                                    )) : ""}
                                 <tr>
                                     <td>
                                         <InputForm
@@ -83,6 +167,7 @@ export default function Invoice() {
                                             name="name"
                                             value={values.name}
                                             onChange={handleChange}
+                                            onBlur={handleBlur}
                                             errors={errors.name}
                                             isInvalid={errors.name && touched.name}
                                             placeholder="enter item name"
@@ -93,10 +178,8 @@ export default function Invoice() {
                                             type="number"
                                             name="qty"
                                             value={values.qty}
-                                            onChange={({ currentTarget: { value } }) => {
-                                                setFieldValue("qty", value);
-                                                setFieldValue("total", values.price * value);
-                                            }}
+                                            onChange={handleCustomChange}
+                                            onBlur={handleBlur}
                                             errors={errors.qty}
                                             isInvalid={errors.qty && touched.qty}
                                             placeholder="enter quantity"
@@ -107,17 +190,15 @@ export default function Invoice() {
                                             type="number"
                                             name="price"
                                             value={values.price}
-                                            onChange={({ currentTarget: { value } }) => {
-                                                setFieldValue("price", value)
-                                                setFieldValue("total", values.qty * value)
-                                            }}
+                                            onChange={handleCustomChange}
+                                            onBlur={handleBlur}
                                             errors={errors.price}
                                             isInvalid={errors.price && touched.price}
                                             placeholder="enter price"
                                         />
                                     </td>
                                     <td>{values.total}</td>
-                                    <td className='text-align-center'><BsX className='' /></td>
+                                    <td className='text-align-center'><BsX className='d-none' /></td>
                                 </tr>
                             </tbody>
                         </Table>
@@ -130,6 +211,8 @@ export default function Invoice() {
     }
 
 
+
+
     function invoiceFooter() {
         return (
             <Row className='border-top border-secondary pt-4'>
@@ -137,7 +220,7 @@ export default function Invoice() {
                     <Button onClick={itemForm.handleSubmit} className='primary mb-4'>Add item</Button>
                 </Col>
                 <Col>
-                    <ListGroup as="ol">
+                    <ListGroup as="ol"  className='me-5'>
                         <ListGroup.Item
                             as="li"
                             className="d-flex justify-content-between align-items-start py-3 border-0"
@@ -146,29 +229,29 @@ export default function Invoice() {
                                 <div className="fw-bold">Subtotal</div>
                             </div>
                             <div>
-                                <span>000</span>
+                                <span>{invoiceForm.values.subtotal}</span>
                             </div>
                         </ListGroup.Item>
                         <ListGroup.Item
                             as="li"
-                            className="d-flex justify-content-between align-items-start  py-3 border-0"
+                            className="d-flex justify-content-between align-items-start  py-3 border-end-0 border-start-0"
                         >
                             <div className="ms-2 me-auto">
                                 <div className="fw-bold">Tax</div>
                             </div>
                             <div>
-                                <span>000</span>
+                                <span>{invoiceForm.values.tax}</span>
                             </div>
                         </ListGroup.Item>
                         <ListGroup.Item
                             as="li"
-                            className="d-flex justify-content-between align-items-start  py-3 border-0"
+                            className="d-flex justify-content-between align-items-start py-3 border-0"
                         >
                             <div className="ms-2 me-auto">
                                 <div className="fw-bold">Total</div>
                             </div>
                             <div>
-                                <span>000</span>
+                                <span>{invoiceForm.values.total}</span>
                             </div>
                         </ListGroup.Item>
                     </ListGroup>
@@ -177,40 +260,42 @@ export default function Invoice() {
         )
     }
 
-
-
     return (
-        <Card className='mt-5'>
-            <Card.Header>
-                <Card.Title>New Invoice</Card.Title>
-            </Card.Header>
-            <Card.Body>
-                {invoiceName()}
-                {itemTable()}
-                {invoiceFooter()}
-            </Card.Body>
-            <Card.Footer>
-                <Row>
-                    <Col>
-                        <Button variant='secondary'>Create</Button>
-                    </Col>
-                </Row>
-            </Card.Footer>
-        </Card>
+        <>
+            <Card className='mt-5'>
+                <Card.Header>
+                    <Card.Title>New Invoice</Card.Title>
+                </Card.Header>
+                <Card.Body>
+                    {invoiceFormInput()}
+                    {itemTable()}
+                    {invoiceFooter()}
+                </Card.Body>
+                <Card.Footer>
+                    <Row>
+                        <Col>
+                            <Button onClick={invoiceForm.handleSubmit} variant='secondary'>Create</Button>
+                        </Col>
+                    </Row>
+                </Card.Footer>
+            </Card>
+        </>
     )
 }
 
 
 
-function InputForm({ type, name, value, onChange, errors, isInvalid, placeholder }) {
+function InputForm({ label = "", type, name, value, onChange, onBlur, errors, isInvalid, placeholder }) {
     return (
         <Form noValidate>
             <Form.Group>
+                {(label !== "") && <Form.Label>{label}</Form.Label>}
                 <Form.Control
                     type={type}
                     name={name}
                     value={value}
                     onChange={onChange}
+                    onBlur={onBlur}
                     isInvalid={isInvalid}
                     controlid="validationCustom05"
                     placeholder={placeholder}
@@ -224,3 +309,24 @@ function InputForm({ type, name, value, onChange, errors, isInvalid, placeholder
 }
 
 
+
+function ErrorModal({ show, onHide, children }) {
+    return (
+        <Modal
+            show={show}
+            onHide={onHide}
+            size="md"
+            backdrop="static"
+        >
+            <Modal.Header closeButton>
+                <BsExclamationCircle className='fs-3 text-danger' />
+            </Modal.Header>
+            <Modal.Body>
+                {children}
+            </Modal.Body>
+            <Modal.Footer>
+                <Button onClick={onHide} size='sm'>Close</Button>
+            </Modal.Footer>
+        </Modal>
+    );
+}
