@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup';
 import { v4 as uuidv4 } from 'uuid'
@@ -8,7 +8,7 @@ import { BsX, BsExclamationCircle } from 'react-icons/bs'
 import InvoiceDataServices from '../services/invoices.service'
 
 
-const itemValidationSchema = Yup.object().shape({
+const itemValidationSchema = Yup.object({
     name: Yup.string()
         .min(5, 'itemName is too short!')
         .max(50, 'itemName is too long!')
@@ -27,18 +27,19 @@ const invoiceValidationSchema = Yup.object().shape({
         .min(5, 'invoiceName is too short!')
         .max(60, 'invoiceName is too long!')
         .required('invoiceName is required'),
-    // item: Yup.array(itemValidationSchema)
-    //     .min(1, "item must have at least 1 items")
-    //     .max(20)
-    //     .required('item is requiered'),
-    // subtotal: Yup.number().required(),
-    // tax: Yup.number().required(),
-    // total: Yup.number().required(),
+    item: Yup.array(itemValidationSchema)
+        .min(1, "item must have at least 1 items")
+        .max(20)
+        .required('item is requiered'),
+    subtotal: Yup.number().required(),
+    tax: Yup.number().required(),
+    total: Yup.number().required(),
 });
 
 export default function Invoice() {
 
     const navigate = useNavigate();
+    const { state } = useLocation();
 
     const [showErrModal, setShowErrModal] = useState(false);
 
@@ -60,7 +61,7 @@ export default function Invoice() {
         return (
             <>
                 <Row>
-                    <Col sm="7">
+                    <Col sm="6" lg="3">
                         <InputForm
                             label='Invoice Name'
                             type="text"
@@ -120,6 +121,10 @@ export default function Invoice() {
     }
 
 
+    useEffect(() => {
+        if (state) invoiceForm.setValues(state)
+    }, []);
+
 
     function itemTable() {
 
@@ -148,7 +153,7 @@ export default function Invoice() {
             <>
                 <Row className='my-4'>
                     <Col>
-                        <Table hover>
+                        <Table hover responsive>
                             <thead>
                                 <tr>
                                     <th className='text-capitalize'>item name</th>
@@ -175,7 +180,7 @@ export default function Invoice() {
                                                 </div>
                                             </td>
                                             <td className='text-center px-5'>
-                                                <BsX onClick={() => handleItemDelete(itm)} role={"button"} className='fs-2 cursor-pointer' />
+                                                <BsX onClick={() => handleItemDelete(itm)} role={"button"} className='fs-2' />
                                             </td>
                                         </tr>
 
@@ -218,7 +223,7 @@ export default function Invoice() {
                                         />
                                     </td>
                                     <td>{values.total}</td>
-                                    <td className='text-align-center'><BsX className='d-none' /></td>
+                                    <td onClick={() => { }} className='text-align-center'><BsX role={"button"} className='fs-2 d-none' /></td>
                                 </tr>
                             </tbody>
                         </Table>
@@ -237,7 +242,7 @@ export default function Invoice() {
         return (
             <Row className='border-top border-secondary pt-4'>
                 <Col>
-                    <Button onClick={itemForm.handleSubmit} className='primary mb-4'>Add item</Button>
+                    <Button onClick={itemForm.handleSubmit} variant='info' className='mb-4'>Add item</Button>
                 </Col>
                 <Col>
                     <ListGroup as="ol" className='me-5'>
@@ -281,10 +286,10 @@ export default function Invoice() {
     }
 
     return (
-        <>
+        <div className='mx-5'>
             <Card className='mt-5'>
                 <Card.Header>
-                    <Card.Title>New Invoice</Card.Title>
+                    <Card.Title>Invoice</Card.Title>
                 </Card.Header>
                 <Card.Body>
                     {invoiceFormInput()}
@@ -294,12 +299,12 @@ export default function Invoice() {
                 <Card.Footer>
                     <Row>
                         <Col>
-                            <Button onClick={invoiceForm.handleSubmit} variant='secondary'>Create</Button>
+                            <Button onClick={invoiceForm.handleSubmit} variant='secondary' className='text-capitalize'>create</Button>
                         </Col>
                     </Row>
                 </Card.Footer>
             </Card>
-        </>
+        </div>
     )
 }
 
