@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup';
 import { v4 as uuidv4 } from 'uuid'
 import { Card, Row, Col, Button, Form, Table, ListGroup, Modal } from 'react-bootstrap'
 import { BsX, BsExclamationCircle } from 'react-icons/bs'
+import InvoiceDataServices from '../services/invoices.service'
 
 
 const itemValidationSchema = Yup.object().shape({
@@ -35,6 +37,8 @@ const invoiceValidationSchema = Yup.object().shape({
 });
 
 export default function Invoice() {
+
+    const navigate = useNavigate();
 
     const [showErrModal, setShowErrModal] = useState(false);
 
@@ -81,7 +85,7 @@ export default function Invoice() {
     }
 
 
-    function handleInvoiceFormSubmit(values) {
+    async function handleInvoiceFormSubmit(values) {
         if (Array.isArray(values.item) && !values.item.length) {
             setShowErrModal(true);
             return;
@@ -89,7 +93,11 @@ export default function Invoice() {
 
         alert(JSON.stringify(values), null, 2);
 
+        await InvoiceDataServices.addInvoices(values);
+
         invoiceForm.resetForm();
+
+        navigate(-1);
     }
 
 
