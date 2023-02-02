@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useFormik, FieldArray, FormikProvider } from 'formik'
 import * as Yup from 'yup';
@@ -102,6 +102,11 @@ export default function Invoice() {
         navigate(-1);
     }
 
+
+    useEffect(() => {
+        if (state) invoiceForm.setValues(state);
+    }, []);
+
     function itemTable() {
 
         return (
@@ -186,6 +191,7 @@ export default function Invoice() {
                                                                         isInvalid={errors?.items && errors?.items[index]?.qty && touched?.items && touched?.items[index]?.qty}
                                                                         errors={errors?.items && errors?.items[index]?.qty ? errors?.items[index]?.qty : ""}
                                                                         placeholder="add quantity"
+                                                                        className="text-center"
                                                                     />
                                                                 </td>
                                                                 <td>
@@ -198,6 +204,7 @@ export default function Invoice() {
                                                                         isInvalid={errors?.items && errors?.items[index]?.price && touched?.items && touched?.items[index]?.price}
                                                                         errors={errors?.items && errors?.items[index]?.price ? errors?.items[index]?.price : ""}
                                                                         placeholder="add price"
+                                                                        className="text-center"
                                                                     />
                                                                 </td>
                                                                 <td className='text-end pe-5'>{values.items[index]?.total}</td>
@@ -291,7 +298,7 @@ export default function Invoice() {
 
 
 
-function InputForm({ label = "", type, name, value, onChange, onBlur, errors, isInvalid, placeholder }) {
+function InputForm({ label = "", type, name, value, onChange, onBlur, errors, isInvalid, placeholder, className = "" }) {
 
     return (
         <Form noValidate>
@@ -306,8 +313,9 @@ function InputForm({ label = "", type, name, value, onChange, onBlur, errors, is
                     isInvalid={isInvalid}
                     controlid="validationCustom05"
                     placeholder={placeholder}
+                    className={className}
                 />
-                <Form.Control.Feedback type="invalid" className='absolutee' >
+                <Form.Control.Feedback type="invalid" className='absolute' >
                     {errors}
                 </Form.Control.Feedback>
             </Form.Group>

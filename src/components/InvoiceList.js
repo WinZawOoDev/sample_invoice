@@ -13,7 +13,6 @@ import InvoiceDataService from '../services/invoices.service'
 
 function InvoiceList() {
 
-
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +32,6 @@ function InvoiceList() {
     await InvoiceDataService.deleteInvoice(id);
     getInvoices();
   }
-
 
 
   function dataTable() {
@@ -65,11 +63,11 @@ function InvoiceList() {
                     <Button size='sm' variant='info' className='mx-2'>
                       <BsEye className='text-black' />
                     </Button>
-                    <Button size='sm' variant='warning' className='mx-2'>
-                      <Link to="invoice-update" state={{ ...inv }}>
+                    <Link to="invoice-update" state={{ ...inv }}>
+                      <Button size='sm' variant='warning' className='mx-2'>
                         <BsPencil className='text-black' />
-                      </Link>
-                    </Button>
+                      </Button>
+                    </Link>
                     <Button onClick={() => handleInvDelete(inv.id)} size='sm' variant='danger' className='mx-2'>
                       <BsTrash className='text-white' />
                     </Button>
