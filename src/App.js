@@ -4,7 +4,6 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import InvoiceList from './components/InvoiceList'
 import Invoice from './components/Invoice';
-import InvoiceV2 from './components/InvoiceV2'
 
 
 function App() {
@@ -16,8 +15,8 @@ function App() {
           <Routes>
             <Route path='/' element={<Outlet />}>
               <Route index element={<InvoiceList />} />
-              <Route path='invoice-create' element={<InvoiceV2 />} />
-              <Route path='invoice-update' element={<Invoice/>}/>
+              <Route path='invoice-create' element={<Invoice />} />
+              <Route path='invoice-update' element={<Invoice />} />
             </Route>
           </Routes>
         </Col>

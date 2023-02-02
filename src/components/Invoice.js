@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useFormik } from 'formik'
+import { useFormik, FieldArray, FormikProvider } from 'formik'
 import * as Yup from 'yup';
-import { v4 as uuidv4 } from 'uuid'
 import { Card, Row, Col, Button, Form, Table, ListGroup, Modal } from 'react-bootstrap'
-import { BsX, BsExclamationCircle } from 'react-icons/bs'
+import { BsX, BsExclamationCircle, BsPlus } from 'react-icons/bs'
 import InvoiceDataServices from '../services/invoices.service'
 
 
-const itemValidationSchema = Yup.object({
+const itemValidationSchema = Yup.object().shape({
     name: Yup.string()
         .min(5, 'itemName is too short!')
         .max(50, 'itemName is too long!')
         .required('itemName is required'),
     qty: Yup.number()
-        .min(1)
-        .max(50)
+        .min(1, "quantity must be at least 1  qty")
+        .max(50, "quantity must not more than 50 ")
         .required('qty is requiered'),
-    price: Yup.number().min(10).max(9999).required('price is required'),
+    price: Yup.number().min(10, "price must be at least 10 ").max(100000, "price must not more than 100000").required('price is required'),
     total: Yup.number().required("total is required")
 });
 
@@ -27,7 +26,7 @@ const invoiceValidationSchema = Yup.object().shape({
         .min(5, 'invoiceName is too short!')
         .max(60, 'invoiceName is too long!')
         .required('invoiceName is required'),
-    item: Yup.array(itemValidationSchema)
+    items: Yup.array().of(itemValidationSchema)
         .min(1, "item must have at least 1 items")
         .max(20)
         .required('item is requiered'),
@@ -35,6 +34,7 @@ const invoiceValidationSchema = Yup.object().shape({
     tax: Yup.number().required(),
     total: Yup.number().required(),
 });
+
 
 export default function Invoice() {
 
@@ -46,7 +46,7 @@ export default function Invoice() {
     const invoiceForm = useFormik({
         initialValues: {
             name: "",
-            item: [],
+            items: [],
             subtotal: "",
             tax: 25.00,
             total: ""
@@ -87,6 +87,7 @@ export default function Invoice() {
 
 
     async function handleInvoiceFormSubmit(values) {
+
         if (Array.isArray(values.item) && !values.item.length) {
             setShowErrModal(true);
             return;
@@ -101,132 +102,117 @@ export default function Invoice() {
         navigate(-1);
     }
 
-
-    const itemForm = useFormik({
-        initialValues: { name: "", qty: "", price: "", total: "" },
-        validationSchema: itemValidationSchema,
-        onSubmit: handleItemFormSubmit
-    });
-
-
-    function handleItemFormSubmit(values) {
-        alert(JSON.stringify(values, null, 2));
-        const { item, tax } = invoiceForm.values
-        let prevSubTotal = item.reduce((accumulator, currentValue) => accumulator + currentValue.total, 0);
-        invoiceForm.setFieldValue("item", [...item, { ...values, id: uuidv4() }]);
-        itemForm.resetForm();
-        let newSubTotal = prevSubTotal + values.total;
-        invoiceForm.setFieldValue("subtotal", newSubTotal);
-        invoiceForm.setFieldValue("total", newSubTotal + tax);
-    }
-
-
-    useEffect(() => {
-        if (state) invoiceForm.setValues(state)
-    }, []);
-
-
     function itemTable() {
-
-        const { values, errors, touched, handleChange, handleBlur, setFieldValue } = itemForm;
-
-        const handleCustomChange = ({ currentTarget: { name, value } }) => {
-            if (name === "qty") {
-                setFieldValue(name, value);
-                setFieldValue("total", values.price * value);
-            } else {
-                setFieldValue(name, value);
-                setFieldValue("total", values.qty * value);
-            }
-        }
-
-        const handleItemDelete = (itm) => {
-
-            const { values: { item }, setFieldValue } = invoiceForm;
-
-            const filterResult = item.filter(i => i.id !== itm.id && i.name !== itm.name);
-
-            setFieldValue("item", filterResult);
-        }
 
         return (
             <>
                 <Row className='my-4'>
                     <Col>
-                        <Table hover responsive>
-                            <thead>
-                                <tr>
-                                    <th className='text-capitalize'>item name</th>
-                                    <th className='text-capitalize text-center'>number of item</th>
-                                    <th className='text-capitalize text-center pe-4'>price</th>
-                                    <th className='text-capitalize text-center pe-4'>total</th>
-                                    <th className='text-capitalize text-center'></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(Array.isArray(invoiceForm.values.item) && invoiceForm.values.item.length) ?
-                                    invoiceForm.values.item.map((itm, index) => (
-                                        <tr key={index}>
-                                            <td>{itm.name}</td>
-                                            <td className='text-center'>{itm.qty}</td>
-                                            <td className=''>
-                                                <div className='d-flex justify-content-center align-item-center text-end'>
-                                                    {itm.price}
-                                                </div>
-                                            </td>
-                                            <td className='text-end pe-4'>
-                                                <div className='d-flex justify-content-center  text-end'>
-                                                    {itm.total}
-                                                </div>
-                                            </td>
-                                            <td className='text-center px-5'>
-                                                <BsX onClick={() => handleItemDelete(itm)} role={"button"} className='fs-2' />
-                                            </td>
-                                        </tr>
+                        <FormikProvider value={invoiceForm}>
+                            <FieldArray
+                                name='items'
+                                render={(arrayHelpers) => {
+                                    const { values, errors, touched, handleChange, handleBlur, setFieldValue } = invoiceForm;
 
-                                    )) : ""}
-                                <tr>
-                                    <td>
-                                        <InputForm
-                                            type="text"
-                                            name="name"
-                                            value={values.name}
-                                            onChange={handleChange}
-                                            onBlur={handleBlur}
-                                            errors={errors.name}
-                                            isInvalid={errors.name && touched.name}
-                                            placeholder="enter item name"
-                                        />
-                                    </td>
-                                    <td>
-                                        <InputForm
-                                            type="number"
-                                            name="qty"
-                                            value={values.qty}
-                                            onChange={handleCustomChange}
-                                            onBlur={handleBlur}
-                                            errors={errors.qty}
-                                            isInvalid={errors.qty && touched.qty}
-                                            placeholder="enter quantity"
-                                        />
-                                    </td>
-                                    <td>
-                                        <InputForm
-                                            type="number"
-                                            name="price"
-                                            value={values.price}
-                                            onChange={handleCustomChange}
-                                            onBlur={handleBlur}
-                                            errors={errors.price}
-                                            isInvalid={errors.price && touched.price}
-                                            placeholder="enter price"
-                                        />
-                                    </td>
-                                    <td>{values.total}</td>
-                                    <td onClick={() => { }} className='text-align-center'><BsX role={"button"} className='fs-2 d-none' /></td>
-                                </tr>
-                            </tbody>
-                        </Table>
+                                    const subTotal = index => values.items.filter((itm, idx) => idx !== index).reduce((accumulator, currentValue) => accumulator + currentValue.total, 0);
+
+                                    const handleCustomChange = ({ currentTarget: { name, value }, index }) => {
+
+                                        let newTotal;
+
+                                        if (name === `items[${index}].qty`) {
+                                            setFieldValue(name, value);
+                                            newTotal = values.items[index].price * value
+                                            setFieldValue(`items[${index}].total`, newTotal);
+                                        } else {
+                                            setFieldValue(name, value);
+                                            newTotal = values.items[index].qty * value;
+                                            setFieldValue(`items[${index}].total`, newTotal);
+                                        }
+                                        const prevSubTotal = subTotal(index)
+                                        const newSubTotal = prevSubTotal + newTotal;
+
+                                        setFieldValue("subtotal", newSubTotal);
+                                        setFieldValue("total", newSubTotal + values.tax);
+
+                                    }
+
+
+                                    const handleRemove = index => {
+                                        arrayHelpers.remove(index);
+                                        const newSubTotal = subTotal(index);
+                                        setFieldValue("subtotal", newSubTotal);
+                                        setFieldValue("total", newSubTotal + values.tax);
+                                    }
+
+
+                                    return (
+                                        <>
+                                            {/* {console.log(invoiceForm)} */}
+                                            <Table hover responsive>
+                                                <thead>
+                                                    <tr>
+                                                        <th className='text-capitalize'>item name</th>
+                                                        <th className='text-capitalize text-center'>number of item</th>
+                                                        <th className='text-capitalize text-center pe-4'>price</th>
+                                                        <th className='text-capitalize text-center px-4'>total price</th>
+                                                        <th className='text-capitalize text-center'></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {
+                                                        invoiceForm.values.items?.map((itm, index) => (
+                                                            <tr key={index}>
+                                                                <td>
+                                                                    <InputForm
+                                                                        type="text"
+                                                                        name={`items[${index}].name`}
+                                                                        value={values.items[index]?.name}
+                                                                        onChange={handleChange}
+                                                                        onBlur={handleBlur}
+                                                                        isInvalid={errors?.items && errors.items[index]?.name && touched?.items && touched?.items[index]?.name}
+                                                                        errors={errors?.items && errors.items[index]?.name ? errors?.items[index]?.name : ""}
+                                                                        placeholder="add name"
+                                                                    />
+
+                                                                </td>
+                                                                <td>
+                                                                    <InputForm
+                                                                        type="number"
+                                                                        name={`items[${index}].qty`}
+                                                                        value={values.items[index]?.qty}
+                                                                        onChange={({ currentTarget }) => handleCustomChange({ currentTarget, index })}
+                                                                        onBlur={handleBlur}
+                                                                        isInvalid={errors?.items && errors?.items[index]?.qty && touched?.items && touched?.items[index]?.qty}
+                                                                        errors={errors?.items && errors?.items[index]?.qty ? errors?.items[index]?.qty : ""}
+                                                                        placeholder="add quantity"
+                                                                    />
+                                                                </td>
+                                                                <td>
+                                                                    <InputForm
+                                                                        type="number"
+                                                                        name={`items[${index}].price`}
+                                                                        value={values.items[index]?.price}
+                                                                        onChange={({ currentTarget }) => handleCustomChange({ currentTarget, index })}
+                                                                        onBlur={handleBlur}
+                                                                        isInvalid={errors?.items && errors?.items[index]?.price && touched?.items && touched?.items[index]?.price}
+                                                                        errors={errors?.items && errors?.items[index]?.price ? errors?.items[index]?.price : ""}
+                                                                        placeholder="add price"
+                                                                    />
+                                                                </td>
+                                                                <td className='text-end pe-5'>{values.items[index]?.total}</td>
+                                                                <td onClick={() => handleRemove(index)} className='text-align-center'><BsX role={"button"} className='fs-2' /></td>
+                                                            </tr>
+                                                        ))
+                                                    }
+                                                </tbody>
+                                            </Table>
+                                            <Button onClick={() => arrayHelpers.push({ name: "", qty: "", price: "", total: "" })} variant='primary'><BsPlus className='fs-3' /><span>row</span></Button>
+                                        </>
+                                    )
+                                }}
+                            />
+                        </FormikProvider>
                     </Col>
                 </Row>
 
@@ -236,15 +222,10 @@ export default function Invoice() {
     }
 
 
-
-
     function invoiceFooter() {
         return (
-            <Row className='border-top border-secondary pt-4'>
-                <Col>
-                    <Button onClick={itemForm.handleSubmit} variant='info' className='mb-4'>Add item</Button>
-                </Col>
-                <Col>
+            <Row className='border-top border-secondary pt-4 d-flex justify-content-end'>
+                <Col lg="5" md="7" className='pe-5'>
                     <ListGroup as="ol" className='me-5'>
                         <ListGroup.Item
                             as="li"
@@ -311,6 +292,7 @@ export default function Invoice() {
 
 
 function InputForm({ label = "", type, name, value, onChange, onBlur, errors, isInvalid, placeholder }) {
+
     return (
         <Form noValidate>
             <Form.Group>
