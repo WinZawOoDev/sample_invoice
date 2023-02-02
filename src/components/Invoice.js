@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useFormik, FieldArray, FormikProvider } from 'formik'
 import * as Yup from 'yup';
 import { Card, Row, Col, Button, Form, Table, ListGroup, Modal } from 'react-bootstrap'
 import { BsX, BsExclamationCircle, BsPlus } from 'react-icons/bs'
 import InvoiceDataServices from '../services/invoices.service'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 
 const itemValidationSchema = Yup.object().shape({
@@ -39,9 +40,12 @@ const invoiceValidationSchema = Yup.object().shape({
 export default function Invoice() {
 
     const navigate = useNavigate();
-    const { state } = useLocation();
+    const { invid } = useParams();
 
+
+    const [loading, setLoading] = useState(false);
     const [showErrModal, setShowErrModal] = useState(false);
+
 
     const invoiceForm = useFormik({
         initialValues: {
@@ -54,6 +58,52 @@ export default function Invoice() {
         validationSchema: invoiceValidationSchema,
         onSubmit: handleInvoiceFormSubmit
     });
+
+
+    async function handleInvoiceFormSubmit(values) {
+
+        alert(JSON.stringify(values), null, 2);
+
+        try {
+            if (invid) {
+
+                await InvoiceDataServices.updateInvoice(invid, values);
+
+            } else {
+
+                await InvoiceDataServices.addInvoices(values);
+
+            }
+
+            invoiceForm.resetForm();
+
+            navigate(-1);
+
+        } catch (error) {
+            console.log(error);
+        }
+
+    }
+
+    async function getInvoice() {
+        setLoading(true);
+        const docSnap = await InvoiceDataServices.getInvoice(invid);
+        let invData = {
+            name: docSnap.data().name,
+            items: docSnap.data().items,
+            subtotal: docSnap.data().subtotal,
+            tax: docSnap.data().tax,
+            total: docSnap.data().total
+        };
+        invoiceForm.setValues(invData);
+        setLoading(false);
+    }
+
+
+    useEffect(() => {
+        if (invid) getInvoice()
+    }, [invid]);
+
 
 
     function invoiceFormInput() {
@@ -86,26 +136,6 @@ export default function Invoice() {
     }
 
 
-    async function handleInvoiceFormSubmit(values) {
-
-        if (Array.isArray(values.item) && !values.item.length) {
-            setShowErrModal(true);
-            return;
-        }
-
-        alert(JSON.stringify(values), null, 2);
-
-        await InvoiceDataServices.addInvoices(values);
-
-        invoiceForm.resetForm();
-
-        navigate(-1);
-    }
-
-
-    useEffect(() => {
-        if (state) invoiceForm.setValues(state);
-    }, []);
 
     function itemTable() {
 
@@ -153,7 +183,6 @@ export default function Invoice() {
 
                                     return (
                                         <>
-                                            {/* {console.log(invoiceForm)} */}
                                             <Table hover responsive>
                                                 <thead>
                                                     <tr>
@@ -277,25 +306,32 @@ export default function Invoice() {
         <div className='mx-5'>
             <Card className='mt-5'>
                 <Card.Header>
-                    <Card.Title>Invoice</Card.Title>
+                    <Card.Title>{`${invid ? "Edit" : "New"} Invoice`}</Card.Title>
                 </Card.Header>
-                <Card.Body>
-                    {invoiceFormInput()}
-                    {itemTable()}
-                    {invoiceFooter()}
-                </Card.Body>
-                <Card.Footer>
-                    <Row>
-                        <Col>
-                            <Button onClick={invoiceForm.handleSubmit} variant='secondary' className='text-capitalize'>create</Button>
-                        </Col>
-                    </Row>
-                </Card.Footer>
+                {
+                    loading ?
+                        <Card.Body>
+                            <LoadingSpinner />
+                        </Card.Body>
+                        : <>
+                            <Card.Body>
+                                {invoiceFormInput()}
+                                {itemTable()}
+                                {invoiceFooter()}
+                            </Card.Body>
+                            <Card.Footer>
+                                <Row>
+                                    <Col>
+                                        <Button onClick={invoiceForm.handleSubmit} variant='secondary' className='text-capitalize'>{invid ? "update" : "create"}</Button>
+                                    </Col>
+                                </Row>
+                            </Card.Footer>
+                        </>
+                }
             </Card>
         </div>
     )
 }
-
 
 
 function InputForm({ label = "", type, name, value, onChange, onBlur, errors, isInvalid, placeholder, className = "" }) {

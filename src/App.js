@@ -16,7 +16,7 @@ function App() {
             <Route path='/' element={<Outlet />}>
               <Route index element={<InvoiceList />} />
               <Route path='invoice-create' element={<Invoice />} />
-              <Route path='invoice-update' element={<Invoice />} />
+              <Route path='invoice-update/invId/:invid' element={<Invoice />} />
             </Route>
           </Routes>
         </Col>

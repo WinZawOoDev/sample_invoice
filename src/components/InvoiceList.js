@@ -55,7 +55,7 @@ function InvoiceList() {
                 <td className='text-center'>
                   {inv?.items.length}
                 </td>
-                <td className='text-end pe-5'>
+                <td className='text-center'>
                   {inv?.total}
                 </td>
                 <td>
@@ -63,7 +63,7 @@ function InvoiceList() {
                     <Button size='sm' variant='info' className='mx-2'>
                       <BsEye className='text-black' />
                     </Button>
-                    <Link to="invoice-update" state={{ ...inv }}>
+                    <Link to={`invoice-update/invid/${inv.id}`}>
                       <Button size='sm' variant='warning' className='mx-2'>
                         <BsPencil className='text-black' />
                       </Button>
@@ -109,9 +109,7 @@ function InvoiceList() {
                 {dataTable()}
               </>
             )
-
         }
-
       </Card.Body>
     </Card>
   );
