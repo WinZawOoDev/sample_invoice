@@ -7,6 +7,7 @@ import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Button from 'react-bootstrap/Button'
 import Modal from 'react-bootstrap/Modal'
+import { AsyncTypeahead } from 'react-bootstrap-typeahead'
 import LoadingSpinner from './LoadingSpinner'
 import { BsPencil, BsTrash, BsEye } from 'react-icons/bs'
 import InvoiceDataService from '../services/invoices.service'
@@ -18,6 +19,8 @@ function InvoiceList() {
   const [loading, setLoading] = useState(true);
 
   const [viewInv, setViewInv] = useState({ show: false, data: {} });
+  const [typeaheadLoading, setTypeheadLoading] = useState(false);
+  const [typeaheadOptions, setTypeaheadOptions] = useState([]);
 
   const getInvoices = async () => {
     setLoading(true);
@@ -39,6 +42,14 @@ function InvoiceList() {
   const handleInvView = (id) => {
     const inv = invoices.find(inv => inv.id === id);
     setViewInv(prev => ({ ...prev, show: true, data: inv }))
+  }
+
+  const handleSearch = async (query) => {
+    setTypeheadLoading(true);
+    const invDoc = await InvoiceDataService.searchInvoice(query)
+    setTypeaheadOptions(invDoc.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+    setTypeheadLoading(false);
+    console.log(invDoc.docs);
   }
 
 
@@ -114,7 +125,12 @@ function InvoiceList() {
             loading ? <LoadingSpinner /> :
               (
                 <>
-                  <ListForm />
+                  <SearchForm
+                    options={typeaheadOptions}
+                    isLoading={typeaheadLoading}
+                    handleSearch={handleSearch}
+                    setInvoices={setInvoices}
+                  />
                   {dataTable()}
                 </>
               )
@@ -129,7 +145,7 @@ function InvoiceList() {
 
 
 
-function ListForm() {
+function SearchForm({ options, isLoading, handleSearch, setInvoices }) {
   return (
     <Row >
       <Col lg="4" md="6">
@@ -138,7 +154,18 @@ function ListForm() {
             <Form.Label>
               Search Invoice
             </Form.Label>
-            <Form.Control type='text' placeholder="Enter invoice Number" />
+            <AsyncTypeahead
+              id="async-typeahead"
+              labelKey="name"
+              isLoading={isLoading}
+              minLength={4}
+              options={options}
+              placeholder="Search for a invoice name..."
+              onSearch={handleSearch}
+              onInputChange={(param) => console.log(param)}
+              renderMenuItemChildren={(option) => (<span role="button" onClick={() => setInvoices([option])}>{option.name}</span>)}
+            />
+
           </Form.Group>
         </Form>
       </Col>
@@ -169,7 +196,7 @@ function ViewInvoice({ show, onHide, data }) {
           <thead>
             <tr>
               <th className='border border-top-0 border-end-0 border-start-0'>Item Name</th>
-              <th className='text-center border border-top-0 border-end-0 border-start-0'>Number of Items</th>
+              <th className='text-center border border-top-0 border-end-0 border-start-0'>Quantity</th>
               <th className='text-center border border-top-0 border-end-0 border-start-0'>Price</th>
               <th className='text-center border border-top-0 border-end-0 border-start-0'>Total Price</th>
             </tr>

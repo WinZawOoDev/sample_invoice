@@ -167,6 +167,7 @@ export default function Invoice() {
                                             newTotal = values.items[index].qty * value;
                                             setFieldValue(`items[${index}].total`, newTotal);
                                         }
+                                        
                                         const prevSubTotal = subTotal(index)
                                         const newSubTotal = prevSubTotal + newTotal;
 

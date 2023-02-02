@@ -8,6 +8,8 @@ import {
     updateDoc,
     deleteDoc,
     doc,
+    query,
+    where
 } from "firebase/firestore";
 
 
@@ -37,6 +39,11 @@ class InvoiceDataService {
     getInvoice = (id) => {
         const invDoc = doc(db, "invoices", id);
         return getDoc(invDoc);
+    }
+
+    searchInvoice = (queryName) => {
+        const invQuery = query(invoiceCollectionRef, where("name", "==", queryName));
+        return getDocs(invQuery);
     }
 
 
