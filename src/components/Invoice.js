@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useFormik, FieldArray, FormikProvider } from 'formik'
 import * as Yup from 'yup';
-import { Card, Row, Col, Button, Form, Table, ListGroup, Modal } from 'react-bootstrap'
+import { Card, Row, Col, Button, Form, Table, ListGroup, Modal, Alert } from 'react-bootstrap'
 import { BsX, BsExclamationCircle, BsPlus } from 'react-icons/bs'
 import InvoiceDataServices from '../services/invoices.service'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -44,6 +44,7 @@ export default function Invoice() {
 
 
     const [loading, setLoading] = useState(false);
+    const [alertMsg, setAlertMsg] = useState({ msg: "", variant: "", show: false });
     const [showErrModal, setShowErrModal] = useState(false);
 
 
@@ -62,24 +63,26 @@ export default function Invoice() {
 
     async function handleInvoiceFormSubmit(values) {
 
-        alert(JSON.stringify(values), null, 2);
-
         try {
             if (invid) {
 
+                setAlertMsg(prev => ({ ...prev, msg: "Updating...", variant: "info", show: true }))
                 await InvoiceDataServices.updateInvoice(invid, values);
+                setAlertMsg(prev => ({ ...prev, msg: "Updated", variant: "success" }))
 
             } else {
 
+                setAlertMsg(prev => ({ ...prev, msg: "Creating...", variant: "info", show: true }))
                 await InvoiceDataServices.addInvoices(values);
+                setAlertMsg(prev => ({ ...prev, msg: "Created", variant: "success" }))
 
             }
-
+            setAlertMsg(prev => ({ ...prev, msg: "", variant: "", show: false }))
             invoiceForm.resetForm();
-
             navigate(-1);
 
         } catch (error) {
+            setAlertMsg(prev => ({ ...prev, msg: error, variant: "danger", show: true }))
             console.log(error);
         }
 
@@ -102,7 +105,7 @@ export default function Invoice() {
 
     useEffect(() => {
         if (invid) getInvoice()
-    }, [invid]);
+    }, []);
 
 
 
@@ -304,6 +307,11 @@ export default function Invoice() {
 
     return (
         <div className='mx-5'>
+            <Alert show={alertMsg.show} variant={alertMsg.variant} role="alert" className='my-5'>
+                <p className='px-5'>
+                    {alertMsg.msg}
+                </p>
+            </Alert>
             <Card className='mt-5'>
                 <Card.Header>
                     <Card.Title>{`${invid ? "Edit" : "New"} Invoice`}</Card.Title>
