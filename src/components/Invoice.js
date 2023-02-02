@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useFormik, FieldArray, FormikProvider } from 'formik'
 import * as Yup from 'yup';
-import { Card, Row, Col, Button, Form, Table, ListGroup, Modal, Alert } from 'react-bootstrap'
+import { Card, Row, Col, Button, Form, Table, ListGroup, Modal } from 'react-bootstrap'
 import { BsX, BsExclamationCircle, BsPlus } from 'react-icons/bs'
 import InvoiceDataServices from '../services/invoices.service'
-import LoadingSpinner from '../components/LoadingSpinner'
+import { CustomAlert, LoadingSpinner } from './Utilities';
 
 
 const itemValidationSchema = Yup.object().shape({
@@ -167,7 +167,7 @@ export default function Invoice() {
                                             newTotal = values.items[index].qty * value;
                                             setFieldValue(`items[${index}].total`, newTotal);
                                         }
-                                        
+
                                         const prevSubTotal = subTotal(index)
                                         const newSubTotal = prevSubTotal + newTotal;
 
@@ -308,11 +308,7 @@ export default function Invoice() {
 
     return (
         <div className='mx-5'>
-            <Alert show={alertMsg.show} variant={alertMsg.variant} role="alert" className='my-5'>
-                <p className='px-5'>
-                    {alertMsg.msg}
-                </p>
-            </Alert>
+            <CustomAlert alertMsg={alertMsg}/>
             <Card className='mt-5'>
                 <Card.Header>
                     <Card.Title>{`${invid ? "Edit" : "New"} Invoice`}</Card.Title>

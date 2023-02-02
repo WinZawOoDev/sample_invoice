@@ -8,15 +8,16 @@ import Col from 'react-bootstrap/Col'
 import Button from 'react-bootstrap/Button'
 import Modal from 'react-bootstrap/Modal'
 import { AsyncTypeahead } from 'react-bootstrap-typeahead'
-import LoadingSpinner from './LoadingSpinner'
 import { BsPencil, BsTrash, BsEye } from 'react-icons/bs'
 import InvoiceDataService from '../services/invoices.service'
+import { CustomAlert, LoadingSpinner } from './Utilities';
 
 
 function InvoiceList() {
 
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [alertMsg, setAlertMsg] = useState({ msg: "", variant: "", show: false });
 
   const [viewInv, setViewInv] = useState({ show: false, data: {} });
   const [typeaheadLoading, setTypeheadLoading] = useState(false);
@@ -35,7 +36,9 @@ function InvoiceList() {
 
 
   const handleInvDelete = async (id) => {
+    setAlertMsg(prev => ({ ...prev, msg: "Deleting...", variant: "danger", show: true }))
     await InvoiceDataService.deleteInvoice(id);
+    setAlertMsg(prev => ({ ...prev, msg: "Deleted...", variant: "success", show: false }))
     getInvoices();
   }
 
@@ -49,7 +52,6 @@ function InvoiceList() {
     const invDoc = await InvoiceDataService.searchInvoice(query)
     setTypeaheadOptions(invDoc.docs.map(doc => ({ ...doc.data(), id: doc.id })));
     setTypeheadLoading(false);
-    console.log(invDoc.docs);
   }
 
 
@@ -103,6 +105,7 @@ function InvoiceList() {
 
   return (
     <>
+      <CustomAlert alertMsg={alertMsg} />
       <Card className='mt-5'>
         <Card.Header>
           <Row>
@@ -122,18 +125,20 @@ function InvoiceList() {
         </Card.Header>
         <Card.Body>
           {
-            loading ? <LoadingSpinner /> :
-              (
-                <>
-                  <SearchForm
-                    options={typeaheadOptions}
-                    isLoading={typeaheadLoading}
-                    handleSearch={handleSearch}
-                    setInvoices={setInvoices}
-                  />
-                  {dataTable()}
-                </>
-              )
+            loading ? <LoadingSpinner />
+              : invoices.length === 0 ?
+                <NoDataView /> :
+                (
+                  <>
+                    <SearchForm
+                      options={typeaheadOptions}
+                      isLoading={typeaheadLoading}
+                      handleSearch={handleSearch}
+                      setInvoices={setInvoices}
+                    />
+                    {dataTable()}
+                  </>
+                )
           }
         </Card.Body>
       </Card>
@@ -141,7 +146,6 @@ function InvoiceList() {
     </>
   );
 }
-
 
 
 
@@ -162,7 +166,6 @@ function SearchForm({ options, isLoading, handleSearch, setInvoices }) {
               options={options}
               placeholder="Search for a invoice name..."
               onSearch={handleSearch}
-              onInputChange={(param) => console.log(param)}
               renderMenuItemChildren={(option) => (<span role="button" onClick={() => setInvoices([option])}>{option.name}</span>)}
             />
 
@@ -238,5 +241,13 @@ function ViewInvoice({ show, onHide, data }) {
   );
 }
 
+
+function NoDataView() {
+  return (
+    <div className='d-flex justify-content-center align-items-center p-5 bg-secondary'>
+      <span className='fs-5'>There is no invoce please create new invoce!</span>
+    </div>
+  )
+}
 
 export default InvoiceList;
