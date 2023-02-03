@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useFormik, FieldArray, FormikProvider } from 'formik'
 import * as Yup from 'yup';
-import { Card, Row, Col, Button, Form, Table, ListGroup, Modal } from 'react-bootstrap'
-import { BsX, BsExclamationCircle, BsPlus } from 'react-icons/bs'
+import { Card, Row, Col, Button, Form, Table, ListGroup } from 'react-bootstrap'
+import { BsX, BsPlus } from 'react-icons/bs'
 import InvoiceDataServices from '../services/invoices.service'
 import { CustomAlert, LoadingSpinner } from './Utilities';
 
@@ -29,7 +29,7 @@ const invoiceValidationSchema = Yup.object().shape({
         .required('invoiceName is required'),
     items: Yup.array().of(itemValidationSchema)
         .min(1, "item must have at least 1 items")
-        .max(20)
+        .max(20, "items must not more than 20")
         .required('item is requiered'),
     subtotal: Yup.number().required(),
     tax: Yup.number().required(),
@@ -45,7 +45,6 @@ export default function Invoice() {
 
     const [loading, setLoading] = useState(false);
     const [alertMsg, setAlertMsg] = useState({ msg: "", variant: "", show: false });
-    const [showErrModal, setShowErrModal] = useState(false);
 
 
     const invoiceForm = useFormik({
@@ -112,33 +111,25 @@ export default function Invoice() {
     function invoiceFormInput() {
         const { values, touched, errors, handleChange, handleBlur } = invoiceForm;
         return (
-            <>
-                <Row>
-                    <Col sm="6" lg="3">
-                        <InputForm
-                            label='Invoice Name'
-                            type="text"
-                            name="name"
-                            value={values.name}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            errors={errors.name}
-                            isInvalid={touched.name && errors.name}
-                            placeholder="enter invoice name"
-                        />
-                    </Col>
-                </Row>
-                <ErrorModal show={showErrModal} onHide={() => setShowErrModal(false)}>
-                    <span className='text-danger'>
-                        item must have at least 1 items
-                    </span>
-                </ErrorModal>
-            </>
-
+            <Row>
+                <Col sm="6" lg="3">
+                    <InputForm
+                        label='Invoice Name'
+                        type="text"
+                        name="name"
+                        value={values.name}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        errors={errors.name}
+                        isInvalid={touched.name && errors.name}
+                        placeholder="enter invoice name"
+                    />
+                </Col>
+            </Row>
         );
     }
 
-
+    
 
     function itemTable() {
 
@@ -247,7 +238,7 @@ export default function Invoice() {
                                                     }
                                                 </tbody>
                                             </Table>
-                                            <Button onClick={() => arrayHelpers.push({ name: "", qty: "", price: "", total: "" })} variant='primary'><BsPlus className='fs-3' /><span>row</span></Button>
+                                            <Button onClick={() => arrayHelpers.push({ name: "", qty: "", price: "", total: "" })} variant='primary'><BsPlus className='fs-3' /><span>item</span></Button>
                                         </>
                                     )
                                 }}
@@ -362,27 +353,4 @@ function InputForm({ label = "", type, name, value, onChange, onBlur, errors, is
             </Form.Group>
         </Form>
     )
-}
-
-
-
-function ErrorModal({ show, onHide, children }) {
-    return (
-        <Modal
-            show={show}
-            onHide={onHide}
-            size="md"
-            backdrop="static"
-        >
-            <Modal.Header closeButton>
-                <BsExclamationCircle className='fs-3 text-danger' />
-            </Modal.Header>
-            <Modal.Body>
-                {children}
-            </Modal.Body>
-            <Modal.Footer>
-                <Button onClick={onHide} size='sm'>Close</Button>
-            </Modal.Footer>
-        </Modal>
-    );
 }

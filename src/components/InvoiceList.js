@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'
 import { CSVLink } from 'react-csv'
-import { Parser } from '@json2csv/plainjs'
 import Table from 'react-bootstrap/Table';
 import Card from 'react-bootstrap/Card'
 import Form from 'react-bootstrap/Form'
