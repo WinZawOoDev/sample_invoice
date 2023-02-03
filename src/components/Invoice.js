@@ -308,7 +308,7 @@ export default function Invoice() {
 
     return (
         <div className='mx-5'>
-            <CustomAlert alertMsg={alertMsg}/>
+            <CustomAlert alertMsg={alertMsg} />
             <Card className='mt-5'>
                 <Card.Header>
                     <Card.Title>{`${invid ? "Edit" : "New"} Invoice`}</Card.Title>

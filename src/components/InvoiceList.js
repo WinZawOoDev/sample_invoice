@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'
+import { CSVLink } from 'react-csv'
+import { Parser } from '@json2csv/plainjs'
 import Table from 'react-bootstrap/Table';
 import Card from 'react-bootstrap/Card'
 import Form from 'react-bootstrap/Form'
@@ -9,6 +11,7 @@ import Button from 'react-bootstrap/Button'
 import Modal from 'react-bootstrap/Modal'
 import { AsyncTypeahead } from 'react-bootstrap-typeahead'
 import { BsPencil, BsTrash, BsEye } from 'react-icons/bs'
+import { FaFileCsv } from 'react-icons/fa'
 import InvoiceDataService from '../services/invoices.service'
 import { CustomAlert, LoadingSpinner } from './Utilities';
 
@@ -54,6 +57,21 @@ function InvoiceList() {
     setTypeheadLoading(false);
   }
 
+  const formatCSV = (inv) => {
+
+    let string = `ItemName,Quantity,Price,TotalPrice\n`;
+    inv.items.forEach(item => {
+      string += item.name + ",";
+      string += item.qty + ",";
+      string += item.price + ",";
+      string += item.total + ",\n"
+    });
+    string += `,,Subtotal,${inv.subtotal}\n`;
+    string += `,,Tax,${inv.tax}\n`;
+    string += `,,TotalAmount,${inv.total}\n`;
+
+    return string;
+  }
 
   function dataTable() {
     return (
@@ -81,17 +99,25 @@ function InvoiceList() {
                 </td>
                 <td>
                   <div className='d-flex justify-content-center '>
-                    <Button onClick={() => handleInvView(inv.id)} size='sm' variant='info' className='mx-2'>
-                      <BsEye className='text-black' />
-                    </Button>
+                    <span role="button" onClick={() => handleInvView(inv.id)} className='mx-2'>
+                      <BsEye className='text-info fs-5' />
+                    </span>
                     <Link to={`invoice-update/invid/${inv.id}`}>
-                      <Button size='sm' variant='warning' className='mx-2'>
-                        <BsPencil className='text-black' />
-                      </Button>
+                      <span role="button" className='mx-2'>
+                        <BsPencil className='text-secondary fx-4' />
+                      </span>
                     </Link>
-                    <Button onClick={() => handleInvDelete(inv.id)} size='sm' variant='danger' className='mx-2'>
-                      <BsTrash className='text-white' />
-                    </Button>
+                    <span role="button" onClick={() => handleInvDelete(inv.id)} className='mx-2'>
+                      <BsTrash className='text-danger fs-5' />
+                    </span>
+                    <CSVLink
+                      filename={inv.name}
+                      data={formatCSV(inv)}
+                    >
+                      <span role="button" className='mx-2'>
+                        <FaFileCsv className='fs-4 text-success' />
+                      </span>
+                    </CSVLink>
                   </div>
                 </td>
               </tr>
