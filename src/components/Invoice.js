@@ -129,7 +129,7 @@ export default function Invoice() {
         );
     }
 
-    
+
 
     function itemTable() {
 
