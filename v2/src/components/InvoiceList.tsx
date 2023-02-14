@@ -79,18 +79,18 @@ function InvoiceList(): JSX.Element {
 
   const formatCSV = (inv: Invoices): string => {
 
-    let string = `ItemName,Quantity,Price,TotalPrice\n`;
+    let formatStr = `ItemName,Quantity,Price,TotalPrice\n`;
     inv.items.forEach(item => {
-      string += item.name + ",";
-      string += item.qty + ",";
-      string += item.price + ",";
-      string += item.total + ",\n"
+      formatStr += item.name + ",";
+      formatStr += item.qty + ",";
+      formatStr += item.price + ",";
+      formatStr += item.total + ",\n"
     });
-    string += `,,Subtotal,${inv.subtotal}\n`;
-    string += `,,Tax,${inv.tax}\n`;
-    string += `,,TotalAmount,${inv.total}\n`;
+    formatStr += `,,Subtotal,${inv.subtotal}\n`;
+    formatStr += `,,Tax,${inv.tax}\n`;
+    formatStr += `,,TotalAmount,${inv.total}\n`;
 
-    return string;
+    return formatStr;
   }
 
   function dataTable(): JSX.Element {
