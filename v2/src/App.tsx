@@ -1,3 +1,4 @@
+import React from 'react';
 import { Routes, Route, Outlet } from 'react-router-dom'
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -6,7 +7,7 @@ import InvoiceList from './components/InvoiceList'
 import Invoice from './components/Invoice';
 
 
-function App() {
+function App(): JSX.Element {
 
   return (
     <Container fluid >

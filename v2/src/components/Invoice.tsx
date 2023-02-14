@@ -7,7 +7,6 @@ import { BsX, BsPlus } from 'react-icons/bs'
 import InvoiceDataServices from '../services/invoices.service'
 import { CustomAlert, LoadingSpinner } from './Utilities';
 
-
 const itemValidationSchema = Yup.object().shape({
     name: Yup.string()
         .min(5, 'itemName is too short!')
@@ -37,6 +36,16 @@ const invoiceValidationSchema = Yup.object().shape({
 });
 
 
+
+interface InvoiceForm {
+    name: string,
+    items: { name: string, price: string, qty: string, total: string }[],
+    subtotal: string,
+    tax: string,
+    total: string,
+}
+
+
 export default function Invoice() {
 
     const navigate = useNavigate();
@@ -47,20 +56,16 @@ export default function Invoice() {
     const [alertMsg, setAlertMsg] = useState({ msg: "", variant: "", show: false });
 
 
+    const initialValues: InvoiceForm = { name: "", items: [], subtotal: "", tax: "", total: "" };
+
     const invoiceForm = useFormik({
-        initialValues: {
-            name: "",
-            items: [],
-            subtotal: "",
-            tax: 25.00,
-            total: ""
-        },
+        initialValues: initialValues,
         validationSchema: invoiceValidationSchema,
         onSubmit: handleInvoiceFormSubmit
     });
 
 
-    async function handleInvoiceFormSubmit(values) {
+    async function handleInvoiceFormSubmit(values: InvoiceForm) {
 
         try {
             if (invid) {
@@ -89,13 +94,13 @@ export default function Invoice() {
 
     async function getInvoice() {
         setLoading(true);
-        const docSnap = await InvoiceDataServices.getInvoice(invid);
+        const docSnap = await InvoiceDataServices.getInvoice(invid!);
         let invData = {
-            name: docSnap.data().name,
-            items: docSnap.data().items,
-            subtotal: docSnap.data().subtotal,
-            tax: docSnap.data().tax,
-            total: docSnap.data().total
+            name: docSnap.data()?.name,
+            items: docSnap.data()?.items,
+            subtotal: docSnap.data()?.subtotal,
+            tax: docSnap.data()?.tax,
+            total: docSnap.data()?.total
         };
         invoiceForm.setValues(invData);
         setLoading(false);
@@ -143,7 +148,7 @@ export default function Invoice() {
                                 render={(arrayHelpers) => {
                                     const { values, errors, touched, handleChange, handleBlur, setFieldValue } = invoiceForm;
 
-                                    const subTotal = index => values.items.filter((itm, idx) => idx !== index).reduce((accumulator, currentValue) => accumulator + currentValue.total, 0);
+                                    const subTotal = (index: number) => values.items.filter((itm, idx) => idx !== index).reduce((accumulator, currentValue) => accumulator + currentValue.total, 0);
 
                                     const handleCustomChange = ({ currentTarget: { name, value }, index }) => {
 

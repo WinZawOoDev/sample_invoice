@@ -11,6 +11,7 @@ import {
     query,
     where
 } from "firebase/firestore";
+import {Invoice} from '../interfaces/Invoice'
 
 
 const invoiceCollectionRef = collection(db, "invoices")
@@ -18,16 +19,16 @@ const invoiceCollectionRef = collection(db, "invoices")
 class InvoiceDataService {
 
 
-    addInvoices = (newInvoice) => addDoc(invoiceCollectionRef, newInvoice);
+    addInvoices = (newInvoice: Invoice) => addDoc(invoiceCollectionRef, newInvoice);
 
 
-    updateInvoice = (id, updatedInvoice) => {
+    updateInvoice = (id: string, updatedInvoice: any) => {
         const invDoc = doc(db, "invoices", id);
         return updateDoc(invDoc, updatedInvoice);
     }
 
 
-    deleteInvoice = (id) => {
+    deleteInvoice = (id: string) => {
         const invDoc = doc(db, "invoices", id);
         return deleteDoc(invDoc);
     }
@@ -36,12 +37,12 @@ class InvoiceDataService {
     getAllInvoices = () => getDocs(invoiceCollectionRef);
 
 
-    getInvoice = (id) => {
+    getInvoice = (id: string ) => {
         const invDoc = doc(db, "invoices", id);
         return getDoc(invDoc);
     }
 
-    searchInvoice = (queryName) => {
+    searchInvoice = (queryName: string) => {
         const invQuery = query(invoiceCollectionRef, where("name", "==", queryName));
         return getDocs(invQuery);
     }

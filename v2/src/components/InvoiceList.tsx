@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'
 import { CSVLink } from 'react-csv'
 import Table from 'react-bootstrap/Table';
@@ -12,23 +12,44 @@ import { AsyncTypeahead } from 'react-bootstrap-typeahead'
 import { BsPencil, BsTrash, BsEye } from 'react-icons/bs'
 import { FaFileCsv } from 'react-icons/fa'
 import InvoiceDataService from '../services/invoices.service'
-import { CustomAlert, LoadingSpinner } from './Utilities';
+import { CustomAlert, AlertMessage, LoadingSpinner } from './Utilities';
 
 
-function InvoiceList() {
 
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [alertMsg, setAlertMsg] = useState({ msg: "", variant: "", show: false });
+interface Items {
+  name: string,
+  price: number,
+  qty: number,
+  total: number
+}
 
-  const [viewInv, setViewInv] = useState({ show: false, data: {} });
-  const [typeaheadLoading, setTypeheadLoading] = useState(false);
-  const [typeaheadOptions, setTypeaheadOptions] = useState([]);
+interface Invoices {
+  id?: string,
+  name: string,
+  items: Items[],
+  subtotal: number,
+  tax: number,
+  total: number
+}
 
-  const getInvoices = async () => {
+
+function InvoiceList(): JSX.Element {
+
+  const [invoices, setInvoices] = useState<Invoices[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [alertMsg, setAlertMsg] = useState<AlertMessage>({ msg: "", variant: "", show: false });
+
+  const [viewInv, setViewInv] = useState<{ show: boolean, data: Invoices }>({ show: false, data: {} as Invoices });
+  const [typeaheadLoading, setTypeheadLoading] = useState<boolean>(false);
+  const [typeaheadOptions, setTypeaheadOptions] = useState<Invoices[]>([]);
+
+  const getInvoices = async (): Promise<void> => {
     setLoading(true);
+
     const data = await InvoiceDataService.getAllInvoices();
-    setInvoices(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+
+    setInvoices(data.docs.map((doc): any => ({ ...doc.data(), id: doc.id })));
+
     setLoading(false);
   }
 
@@ -37,26 +58,26 @@ function InvoiceList() {
   }, []);
 
 
-  const handleInvDelete = async (id) => {
-    setAlertMsg(prev => ({ ...prev, msg: "Deleting...", variant: "danger", show: true }))
+  const handleInvDelete = async (id: string): Promise<void> => {
+    setAlertMsg((prev) => ({ ...prev, msg: "Deleting...", variant: "danger", show: true }))
     await InvoiceDataService.deleteInvoice(id);
-    setAlertMsg(prev => ({ ...prev, msg: "Deleted...", variant: "success", show: false }))
+    setAlertMsg((prev) => ({ ...prev, msg: "Deleted...", variant: "success", show: false }))
     getInvoices();
   }
 
-  const handleInvView = (id) => {
-    const inv = invoices.find(inv => inv.id === id);
-    setViewInv(prev => ({ ...prev, show: true, data: inv }))
+  const handleInvView = (id: string): void => {
+    const inv = invoices.find(inv => inv.id === id)!;
+    setViewInv((prev) => ({ ...prev, show: true, data: inv }))
   }
 
-  const handleSearch = async (query) => {
+  const handleSearch = async (query: string): Promise<void> => {
     setTypeheadLoading(true);
     const invDoc = await InvoiceDataService.searchInvoice(query)
-    setTypeaheadOptions(invDoc.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+    setTypeaheadOptions(invDoc.docs.map((doc): any => ({ ...doc.data(), id: doc.id })));
     setTypeheadLoading(false);
   }
 
-  const formatCSV = (inv) => {
+  const formatCSV = (inv: Invoices): string => {
 
     let string = `ItemName,Quantity,Price,TotalPrice\n`;
     inv.items.forEach(item => {
@@ -72,7 +93,7 @@ function InvoiceList() {
     return string;
   }
 
-  function dataTable() {
+  function dataTable(): JSX.Element {
     return (
       <Table striped bordered hover responsive>
         <thead>
@@ -98,7 +119,7 @@ function InvoiceList() {
                 </td>
                 <td>
                   <div className='d-flex justify-content-center '>
-                    <span role="button" onClick={() => handleInvView(inv.id)} className='mx-2'>
+                    <span role="button" onClick={() => handleInvView(inv.id!)} className='mx-2'>
                       <BsEye className='text-info fs-5' />
                     </span>
                     <Link to={`invoice-update/invid/${inv.id}`}>
@@ -106,7 +127,7 @@ function InvoiceList() {
                         <BsPencil className='text-secondary fx-4' />
                       </span>
                     </Link>
-                    <span role="button" onClick={() => handleInvDelete(inv.id)} className='mx-2'>
+                    <span role="button" onClick={() => handleInvDelete(inv.id!)} className='mx-2'>
                       <BsTrash className='text-danger fs-5' />
                     </span>
                     <CSVLink
@@ -167,14 +188,16 @@ function InvoiceList() {
           }
         </Card.Body>
       </Card>
-      <ViewInvoice show={viewInv.show} onHide={() => setViewInv(prev => ({ ...prev, show: false, data: {} }))} data={viewInv.data} />
+      <ViewInvoice show={viewInv.show} onHide={() => setViewInv(prev => ({ ...prev, show: false, data: {} as Invoices }))} data={viewInv.data} />
     </>
   );
 }
 
 
 
-function SearchForm({ options, isLoading, handleSearch, setInvoices }) {
+function SearchForm(
+  { options, isLoading, handleSearch, setInvoices }:
+    { options: Invoices[], isLoading: boolean, handleSearch: (value: string) => void, setInvoices: React.Dispatch<React.SetStateAction<Invoices[]>> }): JSX.Element {
   return (
     <Row >
       <Col lg="4" md="6">
@@ -191,7 +214,7 @@ function SearchForm({ options, isLoading, handleSearch, setInvoices }) {
               options={options}
               placeholder="Search for a invoice name..."
               onSearch={handleSearch}
-              renderMenuItemChildren={(option) => (<span role="button" onClick={() => setInvoices([option])}>{option.name}</span>)}
+              renderMenuItemChildren={(option: any) => (<span role="button" onClick={() => setInvoices([option])}>{option.name}</span>)}
             />
 
           </Form.Group>
@@ -202,9 +225,12 @@ function SearchForm({ options, isLoading, handleSearch, setInvoices }) {
 }
 
 
-function ViewInvoice({ show, onHide, data }) {
 
-  if (!show) return;
+
+
+function ViewInvoice({ show, onHide, data }: { show: boolean, onHide: () => void, data: Invoices }): JSX.Element {
+
+  if (!show) return <></>;
 
   return (
     <Modal
@@ -242,7 +268,7 @@ function ViewInvoice({ show, onHide, data }) {
             }
 
             <tr className=''>
-              <th rowSpan="4" colSpan="2" className='border border-bottom-0 border-end-0 border-start-0'></th>
+              <th rowSpan={4} colSpan={2} className='border border-bottom-0 border-end-0 border-start-0'></th>
             </tr>
             <tr>
               <td className='border-none pt-3 border border-bottom-0 border-end-0 border-start-0 text-capitalize'>subtotal</td>
@@ -267,7 +293,7 @@ function ViewInvoice({ show, onHide, data }) {
 }
 
 
-function NoDataView() {
+function NoDataView(): JSX.Element {
   return (
     <div className='d-flex justify-content-center align-items-center p-5 bg-secondary'>
       <span className='fs-5'>There is no invoce please create new invoce!</span>

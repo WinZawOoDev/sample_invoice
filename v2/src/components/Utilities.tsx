@@ -1,4 +1,5 @@
 
+import React from 'react'
 import Alert from 'react-bootstrap/Alert'
 
 export function LoadingSpinner() {
@@ -12,12 +13,15 @@ export function LoadingSpinner() {
 }
 
 
-export function CustomAlert({ alertMsg }) {
+export interface AlertMessage { msg: string, variant: string, show: boolean }
+
+export function CustomAlert({ alertMsg: { msg, variant, show } }: { alertMsg: AlertMessage }): JSX.Element {
     return (
-        <Alert show={alertMsg.show} variant={alertMsg.variant} role="alert" className='my-5'>
+        <Alert show={show} variant={variant} role="alert" className='my-5'>
             <p className='px-5'>
-                {alertMsg.msg}
+                {msg}
             </p>
         </Alert>
     )
 }
+
